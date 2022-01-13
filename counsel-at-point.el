@@ -122,6 +122,7 @@ using `default-directory' as a fallback."
       ((symbolp val)
         (symbol-name val))
       (t
+        (set-text-properties 0 (length val) nil val)
         val))))
 
 
