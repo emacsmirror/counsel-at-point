@@ -5,7 +5,7 @@
 
 ;; Author: Campbell Barton <ideasman42@gmail.com>
 
-;; URL: https://codeberg.com/ideasman42/emacs-counsel-at-point
+;; URL: https://codeberg.org/ideasman42/emacs-counsel-at-point
 ;; Keywords: convenience
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "26.2") (counsel "0.13.0"))

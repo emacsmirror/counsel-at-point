@@ -3,7 +3,7 @@
 Counsel at Point
 ################
 
-This is a simple package to improve on on ergonomics for counsel by:
+This is a simple package to improve on the ergonomics for counsel by:
 
 - Searching from the project root.
 - Using the current context to initialize the search.
