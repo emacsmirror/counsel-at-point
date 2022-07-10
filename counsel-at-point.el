@@ -208,17 +208,16 @@ using `default-directory' as a fallback."
             (key-best nil)
             (val-best nil))
 
-          (dolist (item imenu-data)
-            (pcase-let ((`(,key . (,_ . ,val)) item))
-              (when (markerp val)
-                (setq val (marker-position val)))
-              ;; Get the closest point prior to the end of the line.
-              ;; This avoids the problem when the imenu item but some
-              ;; characters afterwards.
-              (when (< val eol)
-                (when (or (null val-best) (< val-best val))
-                  (setq key-best key)
-                  (setq val-best val)))))
+          (pcase-dolist (`(,key . (,_ . ,val)) imenu-data)
+            (when (markerp val)
+              (setq val (marker-position val)))
+            ;; Get the closest point prior to the end of the line.
+            ;; This avoids the problem when the imenu item but some
+            ;; characters afterwards.
+            (when (< val eol)
+              (when (or (null val-best) (< val-best val))
+                (setq key-best key)
+                (setq val-best val))))
 
           (apply fn-orig (counsel-at-point--combine-plists args (list :preselect key-best)))))
 
