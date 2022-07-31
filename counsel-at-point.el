@@ -75,7 +75,7 @@ ones and overrule settings in the other lists."
 (defmacro counsel-at-point--ivy-read-with-extra-plist-args (extra-plist-args &rest body)
   "Wrapper for `ivy-read' that call BODY with EXTRA-PLIST-ARGS."
   `
-  (counsel-at-point--with-advice 'ivy-read
+  (counsel-at-point--with-advice #'ivy-read
     :around
     (lambda (fn-orig &rest args)
       (apply fn-orig (counsel-at-point--combine-plists args ,extra-plist-args)))
@@ -199,7 +199,7 @@ using `default-directory' as a fallback."
 (defun counsel-at-point--imenu-impl ()
   "Wrap `counsel-imenu'."
   (let ((eol (line-end-position)))
-    (counsel-at-point--with-advice 'ivy-read
+    (counsel-at-point--with-advice #'ivy-read
       :around
       (lambda (fn-orig &rest args)
         (let
