@@ -31,6 +31,10 @@
 
 (require 'counsel)
 
+(eval-when-compile
+  ;; For `pcase-dolist'.
+  (require 'pcase))
+
 ;; ---------------------------------------------------------------------------
 ;; Custom Variables
 
