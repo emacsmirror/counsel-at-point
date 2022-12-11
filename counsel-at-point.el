@@ -38,7 +38,9 @@
 ;; ---------------------------------------------------------------------------
 ;; Custom Variables
 
-(defgroup counsel-at-point nil "Context sensitive commands for counsel." :group 'convenience)
+(defgroup counsel-at-point nil
+  "Context sensitive commands for counsel."
+  :group 'convenience)
 
 (defcustom counsel-at-point-project-root 'counsel-at-point-project-root-default
   "Function to call that returns the root path of the current buffer.
@@ -55,13 +57,13 @@ A nil return value will fall back to the `default-directory'."
 
 (defmacro counsel-at-point--with-advice (fn-orig where fn-advice &rest body)
   "Execute BODY with WHERE advice on FN-ORIG temporarily enabled."
-  `
-  (let ((fn-advice-var ,fn-advice))
-    (unwind-protect
-      (progn
-        (advice-add ,fn-orig ,where fn-advice-var)
-        ,@body)
-      (advice-remove ,fn-orig fn-advice-var))))
+  (declare (indent 3))
+  `(let ((fn-advice-var ,fn-advice))
+     (unwind-protect
+         (progn
+           (advice-add ,fn-orig ,where fn-advice-var)
+           ,@body)
+       (advice-remove ,fn-orig fn-advice-var))))
 
 (defun counsel-at-point--combine-plists (&rest plists)
   "Create a single property list from all plists in PLISTS.
@@ -78,12 +80,14 @@ ones and overrule settings in the other lists."
 
 (defmacro counsel-at-point--ivy-read-with-extra-plist-args (extra-plist-args &rest body)
   "Wrapper for `ivy-read' that call BODY with EXTRA-PLIST-ARGS."
-  `
-  (counsel-at-point--with-advice #'ivy-read
-    :around
-    (lambda (fn-orig &rest args)
-      (apply fn-orig (counsel-at-point--combine-plists args ,extra-plist-args)))
-    ,@body))
+  (declare (indent 1))
+  `(counsel-at-point--with-advice #'ivy-read :around
+                                  (lambda (fn-orig &rest args)
+                                    (apply fn-orig
+                                           (counsel-at-point--combine-plists
+                                            args
+                                            ,extra-plist-args)))
+     ,@body))
 
 
 ;; ---------------------------------------------------------------------------
@@ -94,14 +98,15 @@ ones and overrule settings in the other lists."
 This checks `ffip', `projectile' & `vc' root,
 using `default-directory' as a fallback."
   (cond
-    ((fboundp 'ffip-project-root)
-      (funcall #'ffip-project-root))
-    ((fboundp 'projectile-project-root)
-      (funcall #'projectile-project-root))
-    (t
-      (or
-        (when buffer-file-name
-          (let ((vc-backend (ignore-errors (vc-responsible-backend buffer-file-name))))
+   ((fboundp 'ffip-project-root)
+    (funcall #'ffip-project-root))
+   ((fboundp 'projectile-project-root)
+    (funcall #'projectile-project-root))
+   (t
+    (or (when buffer-file-name
+          (let ((vc-backend
+                 (ignore-errors
+                   (vc-responsible-backend buffer-file-name))))
             (when vc-backend
               (vc-call-backend vc-backend 'root buffer-file-name))))))))
 
@@ -109,13 +114,13 @@ using `default-directory' as a fallback."
   "Return the value for `counsel-at-point-thing-at-point' callback."
   (let ((val (funcall counsel-at-point-thing-at-point)))
     (cond
-      ((null val)
-        "")
-      ((symbolp val)
-        (symbol-name val))
-      (t
-        (set-text-properties 0 (length val) nil val)
-        val))))
+     ((null val)
+      "")
+     ((symbolp val)
+      (symbol-name val))
+     (t
+      (set-text-properties 0 (length val) nil val)
+      val))))
 
 
 ;; ---------------------------------------------------------------------------
@@ -123,28 +128,25 @@ using `default-directory' as a fallback."
 
 (defun counsel-at-point--project-search-impl (backend)
   "Wrap various counsel grep commands (see BACKEND)."
-  (let
-    (
-      (initial-search-text
-        (regexp-quote
-          (or
-            (cond
-              ((region-active-p)
+  (let ((initial-search-text
+         (regexp-quote
+          (or (cond
+               ((region-active-p)
                 (prog1 (buffer-substring-no-properties (region-beginning) (region-end))
                   ;; Keeping the selection active causes problems
                   ;; if results in the current buffer are jumped to.
                   ;; NOTE: avoid hard avoid hard dependencies on evil-mode.
                   (when (fboundp 'evil-exit-visual-state)
                     (funcall #'evil-exit-visual-state))))
-              (t ;; Will be nil when over white-space (which is fine).
+               (t ;; Will be nil when over white-space (which is fine).
                 (counsel-at-point--thing-at-point-impl)))
-            ;; Fail-safe in case the `thing-at-point' function returns nil.
-            "")))
+              ;; Fail-safe in case the `thing-at-point' function returns nil.
+              "")))
 
-      (base-path (or (funcall counsel-at-point-project-root) default-directory))
-      (preselect-text nil)
-      ;; Don't use (point-min) as there is never a reason to respect narrowing.
-      (line-number (count-lines 1 (point))))
+        (base-path (or (funcall counsel-at-point-project-root) default-directory))
+        (preselect-text nil)
+        ;; Don't use (point-min) as there is never a reason to respect narrowing.
+        (line-number (count-lines 1 (point))))
 
     (when (and base-path buffer-file-name)
       ;; Use regex so there is no need to include the contents of the line
@@ -152,15 +154,17 @@ using `default-directory' as a fallback."
       ;; it could be susceptible to minor differences in encoding when reading
       ;; the output back from the sub-process.
       (setq preselect-text
-        (concat
-          ;; Match the string start.
-          "\\`"
-          ;; Quote the path name & line number.
-          (regexp-quote
-            (pcase backend
-              ('grep (format "%d:" line-number))
-              (_
-                (format "%s:%d:" (file-relative-name buffer-file-name base-path) line-number)))))))
+            (concat
+             ;; Match the string start.
+             "\\`"
+             ;; Quote the path name & line number.
+             (regexp-quote
+              (pcase backend
+                ('grep (format "%d:" line-number))
+                (_
+                 (format "%s:%d:"
+                         (file-relative-name buffer-file-name base-path)
+                         line-number)))))))
 
     (counsel-at-point--ivy-read-with-extra-plist-args (list :preselect preselect-text)
       (pcase backend
@@ -173,10 +177,8 @@ using `default-directory' as a fallback."
 
 (defun counsel-at-point--find-file-impl (backend)
   "Wrap various counsel grep commands (see BACKEND)."
-  (let
-    (
-      (counsel-preselect-current-file t)
-      (base-path (or (funcall counsel-at-point-project-root) default-directory)))
+  (let ((counsel-preselect-current-file t)
+        (base-path (or (funcall counsel-at-point-project-root) default-directory)))
     ;; Without this the order from 'find' is not useful (unordered?).
     (pcase backend
       ('file-jump (counsel-file-jump nil base-path))
@@ -185,10 +187,8 @@ using `default-directory' as a fallback."
 
 (defun counsel-at-point--find-file-with-preselect-impl (backend)
   "Wrap various counsel grep commands (see BACKEND)."
-  (let
-    (
-      (base-path (or (funcall counsel-at-point-project-root) default-directory))
-      (preselect-text nil))
+  (let ((base-path (or (funcall counsel-at-point-project-root) default-directory))
+        (preselect-text nil))
     (when (and base-path buffer-file-name)
       (setq preselect-text (file-relative-name buffer-file-name base-path)))
 
@@ -203,27 +203,27 @@ using `default-directory' as a fallback."
 (defun counsel-at-point--imenu-impl ()
   "Wrap `counsel-imenu'."
   (let ((eol (line-end-position)))
-    (counsel-at-point--with-advice #'ivy-read
-      :around
-      (lambda (fn-orig &rest args)
-        (let
-          (
-            (imenu-data (nth 1 args))
-            (key-best nil)
-            (val-best nil))
+    (counsel-at-point--with-advice #'ivy-read :around
+                                   (lambda (fn-orig &rest args)
+                                     (let ((imenu-data (nth 1 args))
+                                           (key-best nil)
+                                           (val-best nil))
 
-          (pcase-dolist (`(,key . (,_ . ,val)) imenu-data)
-            (when (markerp val)
-              (setq val (marker-position val)))
-            ;; Get the closest point prior to the end of the line.
-            ;; This avoids the problem when the imenu item but some
-            ;; characters afterwards.
-            (when (< val eol)
-              (when (or (null val-best) (< val-best val))
-                (setq key-best key)
-                (setq val-best val))))
+                                       (pcase-dolist (`(,key . (,_ . ,val)) imenu-data)
+                                         (when (markerp val)
+                                           (setq val (marker-position val)))
+                                         ;; Get the closest point prior to the end of the line.
+                                         ;; This avoids the problem when the imenu item but some
+                                         ;; characters afterwards.
+                                         (when (< val eol)
+                                           (when (or (null val-best) (< val-best val))
+                                             (setq key-best key)
+                                             (setq val-best val))))
 
-          (apply fn-orig (counsel-at-point--combine-plists args (list :preselect key-best)))))
+                                       (apply fn-orig
+                                              (counsel-at-point--combine-plists
+                                               args
+                                               (list :preselect key-best)))))
 
       (counsel-imenu))))
 
