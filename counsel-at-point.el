@@ -138,7 +138,7 @@ using `default-directory' as a fallback."
                   ;; NOTE: avoid hard avoid hard dependencies on evil-mode.
                   (when (fboundp 'evil-exit-visual-state)
                     (funcall #'evil-exit-visual-state))))
-               (t ;; Will be nil when over white-space (which is fine).
+               (t ; Will be nil when over white-space (which is fine).
                 (counsel-at-point--thing-at-point-impl)))
               ;; Fail-safe in case the `thing-at-point' function returns nil.
               "")))
