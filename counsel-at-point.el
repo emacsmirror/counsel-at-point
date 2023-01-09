@@ -289,4 +289,8 @@ using `default-directory' as a fallback."
   (counsel-at-point--imenu-impl))
 
 (provide 'counsel-at-point)
+;; Local Variables:
+;; fill-column: 99
+;; indent-tabs-mode: nil
+;; End:
 ;;; counsel-at-point.el ends here
