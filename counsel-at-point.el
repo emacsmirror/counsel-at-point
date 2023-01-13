@@ -202,7 +202,7 @@ using `default-directory' as a fallback."
 ;; with the nearest item above the cursor.
 (defun counsel-at-point--imenu-impl ()
   "Wrap `counsel-imenu'."
-  (let ((eol (line-end-position)))
+  (let ((eol (pos-eol)))
     (counsel-at-point--with-advice #'ivy-read :around
                                    (lambda (fn-orig &rest args)
                                      (let ((imenu-data (nth 1 args))
