@@ -102,8 +102,7 @@ ones and overrule settings in the other lists."
                                   (lambda (fn-orig &rest args)
                                     (apply fn-orig
                                            (counsel-at-point--combine-plists
-                                            args
-                                            ,extra-plist-args)))
+                                            args ,extra-plist-args)))
      ,@body))
 
 
@@ -239,8 +238,7 @@ using `default-directory' as a fallback."
 
                                        (apply fn-orig
                                               (counsel-at-point--combine-plists
-                                               args
-                                               (list :preselect key-best)))))
+                                               args (list :preselect key-best)))))
 
       (counsel-imenu))))
 
