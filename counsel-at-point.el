@@ -75,12 +75,13 @@ A nil return value will fall back to the `default-directory'."
 (defmacro counsel-at-point--with-advice (fn-orig where fn-advice &rest body)
   "Execute BODY with WHERE advice on FN-ORIG temporarily enabled."
   (declare (indent 3))
-  `(let ((fn-advice-var ,fn-advice))
-     (unwind-protect
-         (progn
-           (advice-add ,fn-orig ,where fn-advice-var)
-           ,@body)
-       (advice-remove ,fn-orig fn-advice-var))))
+  (let ((function-var (gensym)))
+    `(let ((,function-var ,fn-advice))
+       (unwind-protect
+           (progn
+             (advice-add ,fn-orig ,where ,function-var)
+             ,@body)
+         (advice-remove ,fn-orig ,function-var)))))
 
 (defun counsel-at-point--combine-plists (&rest plists)
   "Create a single property list from all plists in PLISTS.
