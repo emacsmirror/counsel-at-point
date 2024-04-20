@@ -8,7 +8,7 @@
 ;; URL: https://codeberg.org/ideasman42/emacs-counsel-at-point
 ;; Keywords: convenience
 ;; Version: 0.1
-;; Package-Requires: ((emacs "26.2") (counsel "0.13.0"))
+;; Package-Requires: ((emacs "29.1") (counsel "0.13.0"))
 
 ;;; Commentary:
 
@@ -34,22 +34,6 @@
 (eval-when-compile
   ;; For `pcase-dolist'.
   (require 'pcase))
-
-
-;; ---------------------------------------------------------------------------
-;; Compatibility
-
-(when (and (version< emacs-version "29.1") (not (and (fboundp 'pos-bol) (fboundp 'pos-eol))))
-  (defun pos-bol (&optional n)
-    "Return the position at the line beginning."
-    (declare (side-effect-free t))
-    (let ((inhibit-field-text-motion t))
-      (line-beginning-position n)))
-  (defun pos-eol (&optional n)
-    "Return the position at the line end."
-    (declare (side-effect-free t))
-    (let ((inhibit-field-text-motion t))
-      (line-end-position n))))
 
 
 ;; ---------------------------------------------------------------------------
