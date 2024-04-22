@@ -72,6 +72,7 @@ A nil return value will fall back to the `default-directory'."
 The process starts by copying the first list, and then setting properties
 from the other lists.  Settings in the last list are the most significant
 ones and overrule settings in the other lists."
+  (declare (important-return-value t))
   (let ((result (copy-sequence (pop plists))))
     (while plists
       (let ((ls (pop plists)))
@@ -98,6 +99,7 @@ ones and overrule settings in the other lists."
   "Function to find the project root from the current buffer.
 This checks `ffip', `projectile' & `vc' root,
 using `default-directory' as a fallback."
+  (declare (important-return-value t))
   (cond
    ((fboundp 'ffip-project-root)
     (funcall #'ffip-project-root))
@@ -113,6 +115,7 @@ using `default-directory' as a fallback."
 
 (defun counsel-at-point--thing-at-point-impl ()
   "Return the value for `counsel-at-point-thing-at-point' callback."
+  (declare (important-return-value t))
   (let ((val (funcall counsel-at-point-thing-at-point)))
     (cond
      ((null val)
@@ -129,6 +132,7 @@ using `default-directory' as a fallback."
 
 (defun counsel-at-point--project-search-impl (backend)
   "Wrap various counsel grep commands (see BACKEND)."
+  (declare (important-return-value nil))
   (let ((initial-search-text
          (regexp-quote
           (or (cond
@@ -178,6 +182,7 @@ using `default-directory' as a fallback."
 
 (defun counsel-at-point--find-file-impl (backend)
   "Wrap various counsel grep commands (see BACKEND)."
+  (declare (important-return-value nil))
   (let ((counsel-preselect-current-file t)
         (base-path (or (funcall counsel-at-point-project-root) default-directory)))
     ;; Without this the order from 'find' is not useful (unordered?).
@@ -188,6 +193,7 @@ using `default-directory' as a fallback."
 
 (defun counsel-at-point--find-file-with-preselect-impl (backend)
   "Wrap various counsel grep commands (see BACKEND)."
+  (declare (important-return-value nil))
   (let ((base-path (or (funcall counsel-at-point-project-root) default-directory))
         (preselect-text nil))
     (when (and base-path buffer-file-name)
@@ -203,6 +209,7 @@ using `default-directory' as a fallback."
 ;; with the nearest item above the cursor.
 (defun counsel-at-point--imenu-impl ()
   "Wrap `counsel-imenu'."
+  (declare (important-return-value nil))
   (let ((eol (pos-eol)))
     (counsel-at-point--with-advice #'ivy-read :around
                                    (lambda (fn-orig &rest args)
@@ -237,24 +244,28 @@ using `default-directory' as a fallback."
 ;;;###autoload
 (defun counsel-at-point-rg ()
   "Context sensitive wrapper for `counsel-rg'."
+  (declare (important-return-value nil))
   (interactive)
   (counsel-at-point--project-search-impl 'rg))
 
 ;;;###autoload
 (defun counsel-at-point-ag ()
   "Context sensitive wrapper for `counsel-ag'."
+  (declare (important-return-value nil))
   (interactive)
   (counsel-at-point--project-search-impl 'ag))
 
 ;;;###autoload
 (defun counsel-at-point-git-grep ()
   "Context sensitive wrapper for `counsel-git-grep'."
+  (declare (important-return-value nil))
   (interactive)
   (counsel-at-point--project-search-impl 'git-grep))
 
 ;;;###autoload
 (defun counsel-at-point-grep ()
   "Context sensitive wrapper for `counsel-grep'."
+  (declare (important-return-value nil))
   (interactive)
   (counsel-at-point--project-search-impl 'grep))
 
@@ -264,18 +275,21 @@ using `default-directory' as a fallback."
 ;;;###autoload
 (defun counsel-at-point-file-jump ()
   "Context sensitive wrapper for `counsel-file-jump'."
+  (declare (important-return-value nil))
   (interactive)
   (counsel-at-point--find-file-impl 'file-jump))
 
 ;;;###autoload
 (defun counsel-at-point-find-file ()
   "Context sensitive wrapper for `counsel-find-file'."
+  (declare (important-return-value nil))
   (interactive)
   (counsel-at-point--find-file-impl 'find-file))
 
 ;;;###autoload
 (defun counsel-at-point-fzf ()
   "Context sensitive wrapper for `counsel-find-file'."
+  (declare (important-return-value nil))
   (interactive)
   (counsel-at-point--find-file-with-preselect-impl 'fzf))
 
@@ -285,6 +299,7 @@ using `default-directory' as a fallback."
 ;;;###autoload
 (defun counsel-at-point-imenu ()
   "Context sensitive wrapper for `counsel-imenu'."
+  (declare (important-return-value nil))
   (interactive)
   (counsel-at-point--imenu-impl))
 
