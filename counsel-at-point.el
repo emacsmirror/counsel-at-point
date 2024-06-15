@@ -56,16 +56,35 @@ A nil return value will fall back to the `default-directory'."
 ;; ---------------------------------------------------------------------------
 ;; Generic Functions/Macros
 
-(defmacro counsel-at-point--with-advice (fn-orig where fn-advice &rest body)
-  "Execute BODY with WHERE advice on FN-ORIG temporarily enabled."
-  (declare (indent 3))
-  (let ((function-var (gensym)))
-    `(let ((,function-var ,fn-advice))
+(defmacro counsel-at-point--with-advice (advice &rest body)
+  "Execute BODY with ADVICE temporarily enabled.
+
+Advice are triplets of (SYMBOL HOW FUNCTION),
+see `advice-add' documentation."
+  (declare (indent 1))
+  (let ((body-let nil)
+        (body-advice-add nil)
+        (body-advice-remove nil)
+        (item nil))
+    (while (setq item (pop advice))
+      (let ((fn-sym (gensym))
+            (fn-advise (pop item))
+            (fn-advice-ty (pop item))
+            (fn-body (pop item)))
+        ;; Build the calls for each type.
+        (push (list fn-sym fn-body) body-let)
+        (push (list 'advice-add fn-advise fn-advice-ty fn-sym) body-advice-add)
+        (push (list 'advice-remove fn-advise fn-sym) body-advice-remove)))
+    (setq body-let (nreverse body-let))
+    (setq body-advice-add (nreverse body-advice-add))
+    ;; Compose the call.
+    `(let ,body-let
        (unwind-protect
            (progn
-             (advice-add ,fn-orig ,where ,function-var)
+             ,@body-advice-add
              ,@body)
-         (advice-remove ,fn-orig ,function-var)))))
+         ,@body-advice-remove))))
+
 
 (defun counsel-at-point--combine-plists (&rest plists)
   "Create a single property list from all plists in PLISTS.
@@ -84,11 +103,12 @@ ones and overrule settings in the other lists."
 (defmacro counsel-at-point--ivy-read-with-extra-plist-args (extra-plist-args &rest body)
   "Wrapper for `ivy-read' that call BODY with EXTRA-PLIST-ARGS."
   (declare (indent 1))
-  `(counsel-at-point--with-advice #'ivy-read :around
-                                  (lambda (fn-orig &rest args)
-                                    (apply fn-orig
-                                           (counsel-at-point--combine-plists
-                                            args ,extra-plist-args)))
+  `(counsel-at-point--with-advice ((#'ivy-read
+                                    :around
+                                    (lambda (fn-orig &rest args)
+                                      (apply fn-orig
+                                             (counsel-at-point--combine-plists
+                                              args ,extra-plist-args)))))
      ,@body))
 
 
@@ -211,26 +231,27 @@ using `default-directory' as a fallback."
   "Wrap `counsel-imenu'."
   (declare (important-return-value nil))
   (let ((eol (pos-eol)))
-    (counsel-at-point--with-advice #'ivy-read :around
-                                   (lambda (fn-orig &rest args)
-                                     (let ((imenu-data (nth 1 args))
-                                           (key-best nil)
-                                           (val-best nil))
+    (counsel-at-point--with-advice ((#'ivy-read
+                                     :around
+                                     (lambda (fn-orig &rest args)
+                                       (let ((imenu-data (nth 1 args))
+                                             (key-best nil)
+                                             (val-best nil))
 
-                                       (pcase-dolist (`(,key . (,_ . ,val)) imenu-data)
-                                         (when (markerp val)
-                                           (setq val (marker-position val)))
-                                         ;; Get the closest point prior to the end of the line.
-                                         ;; This avoids the problem when the imenu item but some
-                                         ;; characters afterwards.
-                                         (when (< val eol)
-                                           (when (or (null val-best) (< val-best val))
-                                             (setq key-best key)
-                                             (setq val-best val))))
+                                         (pcase-dolist (`(,key . (,_ . ,val)) imenu-data)
+                                           (when (markerp val)
+                                             (setq val (marker-position val)))
+                                           ;; Get the closest point prior to the end of the line.
+                                           ;; This avoids the problem when the imenu item but some
+                                           ;; characters afterwards.
+                                           (when (< val eol)
+                                             (when (or (null val-best) (< val-best val))
+                                               (setq key-best key)
+                                               (setq val-best val))))
 
-                                       (apply fn-orig
-                                              (counsel-at-point--combine-plists
-                                               args (list :preselect key-best)))))
+                                         (apply fn-orig
+                                                (counsel-at-point--combine-plists
+                                                 args (list :preselect key-best)))))))
 
       (counsel-imenu))))
 
