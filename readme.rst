@@ -69,7 +69,7 @@ Customization
    Find the projects root-directory from the current buffer.
    This callback takes no arguments and must return a string or nil.
 
-   The default functions uses ``find-file-in-project``, ``projectile`` when available,
+   The default functions uses ``find-file-in-project``, ``projectile``, ``project`` when available,
    falling back to version-control and finally ``default-directory`` if all other methods fail.
 
 ``counsel-at-point-thing-at-point`` (``'symbol-at-point``)

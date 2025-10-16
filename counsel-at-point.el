@@ -129,7 +129,7 @@ ones and overrule settings in the other lists."
 
 (defun counsel-at-point-project-root-default ()
   "Function to find the project root from the current buffer.
-This checks `ffip', `projectile' & `vc' root,
+This checks `ffip', `projectile', `project' & `vc' root,
 using `default-directory' as a fallback."
   (declare (important-return-value t))
   (cond
@@ -137,6 +137,9 @@ using `default-directory' as a fallback."
     (funcall #'ffip-project-root))
    ((fboundp 'projectile-project-root)
     (funcall #'projectile-project-root))
+   ((and (fboundp 'project-current) (fboundp 'project-root))
+    (let ((project (funcall #'project-current)))
+      (and project (funcall #'project-root project))))
    (t
     (or (when buffer-file-name
           (let ((vc-backend
