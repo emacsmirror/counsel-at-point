@@ -1,4 +1,4 @@
-;;; counsel-at-point.el --- Context sensitive project search -*- lexical-binding: t -*-
+;;; counsel-at-point.el --- Context-sensitive project search -*- lexical-binding: t -*-
 
 ;; SPDX-License-Identifier: GPL-2.0-or-later
 ;; Copyright (C) 2021  Campbell Barton
@@ -12,10 +12,10 @@
 
 ;;; Commentary:
 
-;; Perform project wide search using the current context.
+;; Perform project-wide search using the current context.
 ;;
 
-;;; Usage
+;;; Usage:
 
 ;;
 ;; Write the following code to your .emacs file:
@@ -40,16 +40,16 @@
 ;; Custom Variables
 
 (defgroup counsel-at-point nil
-  "Context sensitive commands for counsel."
+  "Context-sensitive commands for counsel."
   :group 'convenience)
 
 (defcustom counsel-at-point-project-root 'counsel-at-point-project-root-default
-  "Function to call that returns the root path of the current buffer.
+  "Function that returns the root path of the current buffer.
 A nil return value will fall back to the `default-directory'."
   :type 'function)
 
 (defcustom counsel-at-point-thing-at-point 'symbol-at-point
-  "Function that returns the text at the point (defaults to `symbol-at-point')."
+  "Function that returns the text at point (defaults to `symbol-at-point')."
   :type 'function)
 
 
@@ -59,7 +59,7 @@ A nil return value will fall back to the `default-directory'."
 (defmacro counsel-at-point--with-advice (advice &rest body)
   "Execute BODY with ADVICE temporarily enabled.
 
-Advice are triplets of (SYMBOL HOW FUNCTION),
+Advice entries are triplets of (SYMBOL HOW FUNCTION);
 see `advice-add' documentation."
   (declare (indent 1))
   (let ((advice-list advice)
@@ -78,7 +78,7 @@ see `advice-add' documentation."
      (t
       (while (setq item (pop advice-list))
         (unless (and (listp item) (eq 3 (length item)))
-          (error "Each advice must be a list of 3 items"))
+          (error "Each advice entry must be a list of 3 items"))
         (let ((fn-sym (gensym))
               (fn-advise (pop item))
               (fn-advice-ty (pop item))
@@ -102,7 +102,7 @@ see `advice-add' documentation."
   "Create a single property list from all plists in PLISTS.
 The process starts by copying the first list, and then setting properties
 from the other lists.  Settings in the last list are the most significant
-ones and overrule settings in the other lists."
+ones and override settings in the other lists."
   (declare (important-return-value t))
   (let ((result (copy-sequence (pop plists))))
     (while plists
@@ -113,7 +113,7 @@ ones and overrule settings in the other lists."
     result))
 
 (defmacro counsel-at-point--ivy-read-with-extra-plist-args (extra-plist-args &rest body)
-  "Wrapper for `ivy-read' that call BODY with EXTRA-PLIST-ARGS."
+  "Wrapper for `ivy-read' that calls BODY with EXTRA-PLIST-ARGS."
   (declare (indent 1))
   `(counsel-at-point--with-advice ((#'ivy-read
                                     :around
@@ -128,8 +128,8 @@ ones and overrule settings in the other lists."
 ;; Internal Functions/Macros
 
 (defun counsel-at-point-project-root-default ()
-  "Function to find the project root from the current buffer.
-This checks `ffip', `projectile', `project' & `vc' root,
+  "Find the project root from the current buffer.
+This checks `ffip', `projectile', `project' and `vc' roots,
 using `default-directory' as a fallback."
   (declare (important-return-value t))
   (cond
@@ -149,7 +149,7 @@ using `default-directory' as a fallback."
               (vc-call-backend vc-backend 'root buffer-file-name))))))))
 
 (defun counsel-at-point--thing-at-point-impl ()
-  "Return the value for `counsel-at-point-thing-at-point' callback."
+  "Return the value from the `counsel-at-point-thing-at-point' callback."
   (declare (important-return-value t))
   (let ((val (funcall counsel-at-point-thing-at-point)))
     (cond
@@ -166,7 +166,7 @@ using `default-directory' as a fallback."
 ;; Counsel Wrapper Implementations
 
 (defun counsel-at-point--project-search-impl (backend)
-  "Wrap various counsel grep commands (see BACKEND)."
+  "Wrap various counsel search commands (see BACKEND)."
   (declare (important-return-value nil))
   (let ((initial-search-text
          (regexp-quote
@@ -175,10 +175,10 @@ using `default-directory' as a fallback."
                 (prog1 (buffer-substring-no-properties (region-beginning) (region-end))
                   ;; Keeping the selection active causes problems
                   ;; if results in the current buffer are jumped to.
-                  ;; NOTE: avoid hard avoid hard dependencies on evil-mode.
+                  ;; NOTE: Avoid hard dependencies on evil-mode.
                   (when (fboundp 'evil-exit-visual-state)
                     (funcall #'evil-exit-visual-state))))
-               (t ; Will be nil when over white-space (which is fine).
+               (t ; Will be nil when over blank-space (which is fine).
                 (counsel-at-point--thing-at-point-impl)))
               ;; Fail-safe in case the `thing-at-point' function returns nil.
               "")))
@@ -189,15 +189,15 @@ using `default-directory' as a fallback."
         (line-number (count-lines 1 (point))))
 
     (when (and base-path buffer-file-name)
-      ;; Use regex so there is no need to include the contents of the line
-      ;; (for an exact match). While this probably works OK for the most-part,
+      ;; Use a regex so there is no need to include the contents of the line
+      ;; (for an exact match). While this probably works OK for the most part,
       ;; it could be susceptible to minor differences in encoding when reading
-      ;; the output back from the sub-process.
+      ;; the output back from the subprocess.
       (setq preselect-text
             (concat
              ;; Match the string start.
              "\\`"
-             ;; Quote the path name & line number.
+             ;; Quote the path name and line number.
              (regexp-quote
               (pcase backend
                 ('grep (format "%d:" line-number))
@@ -213,21 +213,21 @@ using `default-directory' as a fallback."
         ('git-grep (counsel-git-grep initial-search-text base-path))
         ;; Ignores base-path.
         ('grep (counsel-grep initial-search-text))
-        (_ (error "Unknown back-end: %s" backend))))))
+        (_ (error "Unknown backend: %s" backend))))))
 
 (defun counsel-at-point--find-file-impl (backend)
-  "Wrap various counsel grep commands (see BACKEND)."
+  "Wrap various counsel file-finding commands (see BACKEND)."
   (declare (important-return-value nil))
   (let ((counsel-preselect-current-file t)
         (base-path (or (funcall counsel-at-point-project-root) default-directory)))
-    ;; Without this the order from 'find' is not useful (unordered?).
+    ;; Without this, the order from 'find' is not useful (unordered?).
     (pcase backend
       ('file-jump (counsel-file-jump nil base-path))
       ('find-file (counsel-find-file nil base-path))
-      (_ (error "Unknown back-end: %s" backend)))))
+      (_ (error "Unknown backend: %s" backend)))))
 
 (defun counsel-at-point--find-file-with-preselect-impl (backend)
-  "Wrap various counsel grep commands (see BACKEND)."
+  "Wrap various counsel file-finding commands (see BACKEND)."
   (declare (important-return-value nil))
   (let ((base-path (or (funcall counsel-at-point-project-root) default-directory))
         (preselect-text nil))
@@ -237,11 +237,11 @@ using `default-directory' as a fallback."
     (counsel-at-point--ivy-read-with-extra-plist-args (list :preselect preselect-text)
       (pcase backend
         ('fzf (counsel-fzf nil base-path))
-        (_ (error "Unknown back-end: %s" backend))))))
+        (_ (error "Unknown backend: %s" backend))))))
 
-;; Note, by default counsel uses the `thing-at-point' (symbol),
-;; however this is very often not part of the imenu, so - replace this
-;; with the nearest item above the cursor.
+;; NOTE: by default, counsel uses `thing-at-point' (symbol),
+;; but this is often not part of the `imenu'.
+;; Instead, pre-select the nearest item above the cursor.
 (defun counsel-at-point--imenu-impl ()
   "Wrap `counsel-imenu'."
   (declare (important-return-value nil))
@@ -257,8 +257,8 @@ using `default-directory' as a fallback."
                                            (when (markerp val)
                                              (setq val (marker-position val)))
                                            ;; Get the closest point prior to the end of the line.
-                                           ;; This avoids the problem when the imenu item but some
-                                           ;; characters afterwards.
+                                           ;; This avoids the problem when the cursor is after the
+                                           ;; `imenu' item but still on the same line.
                                            (when (< val eol)
                                              (when (or (null val-best) (< val-best val))
                                                (setq key-best key)
@@ -274,33 +274,33 @@ using `default-directory' as a fallback."
 ;; ---------------------------------------------------------------------------
 ;; Public Functions
 
-;; Grep Wrappers
-;; =============
+;; Search Wrappers
+;; ===============
 
 ;;;###autoload
 (defun counsel-at-point-rg ()
-  "Context sensitive wrapper for `counsel-rg'."
+  "Context-sensitive wrapper for `counsel-rg'."
   (declare (important-return-value nil))
   (interactive)
   (counsel-at-point--project-search-impl 'rg))
 
 ;;;###autoload
 (defun counsel-at-point-ag ()
-  "Context sensitive wrapper for `counsel-ag'."
+  "Context-sensitive wrapper for `counsel-ag'."
   (declare (important-return-value nil))
   (interactive)
   (counsel-at-point--project-search-impl 'ag))
 
 ;;;###autoload
 (defun counsel-at-point-git-grep ()
-  "Context sensitive wrapper for `counsel-git-grep'."
+  "Context-sensitive wrapper for `counsel-git-grep'."
   (declare (important-return-value nil))
   (interactive)
   (counsel-at-point--project-search-impl 'git-grep))
 
 ;;;###autoload
 (defun counsel-at-point-grep ()
-  "Context sensitive wrapper for `counsel-grep'."
+  "Context-sensitive wrapper for `counsel-grep'."
   (declare (important-return-value nil))
   (interactive)
   (counsel-at-point--project-search-impl 'grep))
@@ -310,21 +310,21 @@ using `default-directory' as a fallback."
 
 ;;;###autoload
 (defun counsel-at-point-file-jump ()
-  "Context sensitive wrapper for `counsel-file-jump'."
+  "Context-sensitive wrapper for `counsel-file-jump'."
   (declare (important-return-value nil))
   (interactive)
   (counsel-at-point--find-file-impl 'file-jump))
 
 ;;;###autoload
 (defun counsel-at-point-find-file ()
-  "Context sensitive wrapper for `counsel-find-file'."
+  "Context-sensitive wrapper for `counsel-find-file'."
   (declare (important-return-value nil))
   (interactive)
   (counsel-at-point--find-file-impl 'find-file))
 
 ;;;###autoload
 (defun counsel-at-point-fzf ()
-  "Context sensitive wrapper for `counsel-find-file'."
+  "Context-sensitive wrapper for `counsel-fzf'."
   (declare (important-return-value nil))
   (interactive)
   (counsel-at-point--find-file-with-preselect-impl 'fzf))
@@ -334,7 +334,7 @@ using `default-directory' as a fallback."
 
 ;;;###autoload
 (defun counsel-at-point-imenu ()
-  "Context sensitive wrapper for `counsel-imenu'."
+  "Context-sensitive wrapper for `counsel-imenu'."
   (declare (important-return-value nil))
   (interactive)
   (counsel-at-point--imenu-impl))
